@@ -242,12 +242,11 @@
             <h3>🔍 QRコードをスキャン</h3>
             <p>各店舗のQRコードを読み取ってスタンプを集めよう！</p>
            
-    <div class="qr-buttons">
-        <button id="scanQR" class="qr-button scan-button">📷 カメラでQRスキャン</button>
-        <div class="or-divider">または</div>
-        <input type="text" id="qrInput" class="qr-input" placeholder="QRコードの内容を手動入力">
-        <button id="submitStamp" class="qr-button">スタンプを獲得する</button>
-    </div>
+    <video id="scanner-video" style="width:100%; height:auto; display:none;"></video>
+<canvas id="qr-canvas" style="display:none;"></canvas>
+<div class="qr-buttons">
+    <button id="scanQR" class="qr-button scan-button">📷 QRスキャン</button>
+</div>
         </div>
         
         <div class="prize-section">

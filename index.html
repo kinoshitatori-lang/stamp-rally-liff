@@ -341,6 +341,29 @@
             }
         }
         
+        // QRコードスキャン機能
+        document.getElementById('scanQR').addEventListener('click', function() {
+            if (liff.isApiAvailable('scanCodeV2')) {
+                liff.scanCodeV2()
+                    .then(result => {
+                        // QRコードの内容を入力欄に設定
+                        document.getElementById('qrInput').value = result.value;
+                        showMessage('QRコードを読み取りました！', 'success');
+                        
+                        // 自動的にスタンプ獲得処理を実行
+                        setTimeout(() => {
+                            document.getElementById('submitStamp').click();
+                        }, 1000);
+                    })
+                    .catch(error => {
+                        console.error('QR scan error:', error);
+                        showMessage('QRコードの読み取りに失敗しました', 'error');
+                    });
+            } else {
+                showMessage('この機能はLINEアプリ内でのみ利用可能です', 'error');
+            }
+        });
+        
         // スタンプ獲得処理
         document.getElementById('submitStamp').addEventListener('click', function() {
             const qrCode = document.getElementById('qrInput').value.trim();

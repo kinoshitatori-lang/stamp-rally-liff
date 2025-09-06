@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>デジタルスタンプラリー</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -95,13 +96,58 @@
             margin-bottom: 20px;
         }
         
+        .qr-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .scan-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .scan-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .scan-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .or-divider {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            position: relative;
+        }
+        
+        .or-divider:before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #ddd;
+            z-index: 1;
+        }
+        
         .qr-input {
             width: 100%;
             padding: 15px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
-            margin-bottom: 15px;
         }
         
         .qr-button {
@@ -124,6 +170,85 @@
         .qr-button:disabled {
             background: #ccc;
             cursor: not-allowed;
+        }
+        
+        /* QRスキャナー関連スタイル */
+        .qr-scanner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .scanner-header {
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .scanner-header h4 {
+            margin: 0;
+            font-size: 16px;
+        }
+        
+        .close-scanner {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-scanner:hover {
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .qr-reader {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .scanner-info {
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+        }
+        
+        .scanner-info p {
+            margin: 0;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        /* QRスキャナーのビデオ要素のスタイル調整 */
+        #qrReader video {
+            width: 100% !important;
+            height: auto !important;
+            max-height: 70vh;
+            object-fit: cover;
+        }
+        
+        #qrReader canvas {
+            display: none;
         }
         
         .prize-section {
@@ -177,26 +302,6 @@
             border: 1px solid #f5c6cb;
         }
         
-        .company-list {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .company-list h3 {
-            margin-bottom: 10px;
-            color: #495057;
-        }
-        
-        .company-item {
-            padding: 8px;
-            margin: 5px 0;
-            background: white;
-            border-radius: 5px;
-            border-left: 3px solid #007bff;
-        }
-        
         .loading {
             display: none;
             text-align: center;
@@ -241,8 +346,25 @@
         <div class="qr-section">
             <h3>🔍 QRコードをスキャン</h3>
             <p>各店舗のQRコードを読み取ってスタンプを集めよう！</p>
-            <input type="text" id="qrInput" class="qr-input" placeholder="QRコードの内容を入力 or 自動入力">
-            <button id="submitStamp" class="qr-button">スタンプを獲得する</button>
+            
+            <div class="qr-buttons">
+                <button id="scanQR" class="qr-button scan-button">📷 カメラでQRスキャン</button>
+                <div class="or-divider">または</div>
+                <input type="text" id="qrInput" class="qr-input" placeholder="QRコードの内容を手動入力">
+                <button id="submitStamp" class="qr-button">スタンプを獲得する</button>
+            </div>
+            
+            <!-- QRコードスキャナー -->
+            <div id="qrScanner" class="qr-scanner" style="display: none;">
+                <div class="scanner-header">
+                    <h4>📷 QRコードをカメラに向けてください</h4>
+                    <button id="closeScannerBtn" class="close-scanner">×</button>
+                </div>
+                <div id="qrReader" class="qr-reader"></div>
+                <div class="scanner-info">
+                    <p>QRコードが見つからない場合は、カメラを近づけるか明るい場所で試してください</p>
+                </div>
+            </div>
         </div>
         
         <div class="prize-section">
@@ -252,14 +374,6 @@
             <button id="applyPrize" class="prize-button" disabled>賞品に応募する</button>
         </div>
         
-        <div class="company-list">
-            <h3>参加企業一覧 (サンプル)</h3>
-            <div class="company-item">カフェ・レストラン (10社)</div>
-            <div class="company-item">小売・ショップ (15社)</div>
-            <div class="company-item">サービス業 (10社)</div>
-            <div class="company-item">その他 (5社)</div>
-        </div>
-        
         <div class="loading" id="loading">
             <div class="spinner"></div>
             <p>処理中...</p>
@@ -267,88 +381,48 @@
     </div>
 
     <script>
-        // LIFF初期化
-        let liffId = '2008067578-By4EN4dJ'; // LINE Developersで作成したLIFF IDを設定
+        // ⚠️ 重要: 以下の値を実際の値に変更してください ⚠️
+        let liffId = '2008067578-By4EN4dJ';  // ← LINE Developersで取得したLIFF IDに変更
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzfjCybSCXRWj-lZsqQNDpj-Yb8bjwoNJIPLoqX7Ki01RiiYscX49oL06G2nKTQoAA/exec';  // ← GASのWebアプリURLに変更
+        
         let userId = '';
         let currentStamps = [];
-        
-        // GASのWebアプリURL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzfjCybSCXRWj-lZsqQNDpj-Yb8bjwoNJIPLoqX7Ki01RiiYscX49oL06G2nKTQoAA/exec';
-        
-        // LIFF初期化
-        liff.init({
-            liffId: liffId
-        }).then(() => {
-            if (liff.isLoggedIn()) {
-                liff.getProfile().then(profile => {
-                    userId = profile.userId;
-                    loadUserData();
-                });
-            } else {
-                liff.login();
-            }
-        }).catch(err => {
-            console.error('LIFF initialization failed', err);
-            showMessage('LIFF初期化エラー: ' + err, 'error');
-        });
-        
-        // ユーザーデータ読み込み
-        function loadUserData() {
-            showLoading(true);
-            
-            fetch(GAS_URL + '?action=getUserStamps&userId=' + userId)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        currentStamps = data.stamps || [];
-                        updateStampDisplay();
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showMessage('データの読み込みに失敗しました', 'error');
-                })
-                .finally(() => {
-                    showLoading(false);
-                });
-        }
-        
-        // スタンプ表示更新
-        function updateStampDisplay() {
-            const stampCount = currentStamps.length;
-            document.getElementById('stampCount').textContent = stampCount;
-            
-            // スタンプアイコン更新
-            for (let i = 1; i <= 3; i++) {
-                const stampElement = document.getElementById('stamp' + i);
-                if (i <= stampCount) {
-                    stampElement.className = 'stamp collected';
-                    stampElement.textContent = '🎯';
-                } else {
-                    stampElement.className = 'stamp empty';
-                    stampElement.textContent = '📌';
-                }
-            }
-            
-            // 応募ボタン制御
-            const applyButton = document.getElementById('applyPrize');
-            if (stampCount >= 2) {
-                applyButton.disabled = false;
-                applyButton.textContent = `賞品に応募する (商品券${stampCount >= 3 ? '2' : '1'}枚)`;
-            } else {
-                applyButton.disabled = true;
-                applyButton.textContent = '賞品に応募する (スタンプが足りません)';
-            }
-        }
         
         // QRコードスキャナー関連の変数
         let html5QrCode = null;
         let isScanning = false;
         
+        // LIFF初期化
+        if (typeof liff !== 'undefined') {
+            liff.init({
+                liffId: liffId
+            }).then(() => {
+                if (liff.isLoggedIn()) {
+                    liff.getProfile().then(profile => {
+                        userId = profile.userId;
+                        loadUserData();
+                    });
+                } else {
+                    liff.login();
+                }
+            }).catch(err => {
+                console.error('LIFF initialization failed', err);
+                showMessage('LIFF初期化エラー: ' + err, 'error');
+                // LIFF失敗時もアプリは動作させる（テスト用）
+                userId = 'test_user_' + Date.now();
+            });
+        } else {
+            console.log('LIFF not available, running in test mode');
+            userId = 'test_user_' + Date.now();
+        }
+        
         // QRコードスキャン機能
         document.getElementById('scanQR').addEventListener('click', function() {
+            console.log('Scan button clicked');
+            
             // LIFFが利用可能でかつLINE内の場合は、LIFF機能を優先
             if (typeof liff !== 'undefined' && liff.isInClient && liff.isApiAvailable && liff.isApiAvailable('scanCodeV2')) {
+                console.log('Using LIFF scanner');
                 liff.scanCodeV2()
                     .then(result => {
                         document.getElementById('qrInput').value = result.value;
@@ -363,6 +437,7 @@
                         startHtml5QrScanner();
                     });
             } else {
+                console.log('Using HTML5 scanner');
                 // LINE外またはLIFF非対応の場合はHTML5スキャナーを使用
                 startHtml5QrScanner();
             }
@@ -372,6 +447,9 @@
         function startHtml5QrScanner() {
             if (isScanning) return;
             
+            console.log('Starting HTML5 QR scanner');
+            showMessage('カメラを準備中...', 'success');
+            
             const qrScannerDiv = document.getElementById('qrScanner');
             qrScannerDiv.style.display = 'flex';
             
@@ -380,20 +458,21 @@
             
             // カメラ設定
             const config = {
-                fps: 10,    // フレームレート
-                qrbox: {    // スキャンエリア
-                    width: 250,
-                    height: 250
-                },
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
                 aspectRatio: 1.0,
-                disableFlip: false // フロントカメラの場合の反転を有効
+                disableFlip: false
             };
             
-            // カメラ開始
+            // まずカメラ一覧を取得
             Html5Qrcode.getCameras().then(devices => {
+                console.log('Found cameras:', devices);
+                
                 if (devices && devices.length) {
-                    // 背面カメラを優先的に選択
+                    showMessage(`${devices.length}個のカメラが見つかりました`, 'success');
+                    
                     let cameraId = devices[0].id;
+                    let selectedCamera = devices[0];
                     
                     // 背面カメラを探す
                     for (let device of devices) {
@@ -401,43 +480,57 @@
                             device.label.toLowerCase().includes('rear') ||
                             device.label.toLowerCase().includes('environment')) {
                             cameraId = device.id;
+                            selectedCamera = device;
                             break;
                         }
                     }
+                    
+                    console.log('Selected camera:', selectedCamera);
+                    showMessage(`カメラを起動中...`, 'success');
                     
                     html5QrCode.start(
                         cameraId,
                         config,
                         (decodedText, decodedResult) => {
-                            // QRコード読み取り成功
                             console.log('QR Code detected:', decodedText);
-                            
-                            // スキャナーを停止
                             stopHtml5QrScanner();
-                            
-                            // 読み取った内容を入力欄に設定
                             document.getElementById('qrInput').value = decodedText;
                             showMessage('QRコードを読み取りました！', 'success');
-                            
-                            // 自動的にスタンプ獲得処理を実行
                             setTimeout(() => {
                                 document.getElementById('submitStamp').click();
                             }, 1000);
                         },
                         (errorMessage) => {
-                            // エラー処理（通常は無視）
-                            // console.log('QR scan error:', errorMessage);
+                            // スキャンエラー（通常のスキャン中は無視）
                         }
-                    ).catch(err => {
+                    ).then(() => {
+                        console.log('Camera started successfully');
+                        showMessage('カメラが起動しました！', 'success');
+                    }).catch(err => {
                         console.error('Camera start error:', err);
+                        let errorMsg = 'カメラエラー: ';
+                        
+                        if (err.name === 'NotAllowedError') {
+                            errorMsg += 'カメラアクセスが拒否されました。';
+                        } else if (err.name === 'NotFoundError') {
+                            errorMsg += 'カメラが見つかりません。';
+                        } else if (err.name === 'NotReadableError') {
+                            errorMsg += 'カメラが使用中です。';
+                        } else {
+                            errorMsg += err.message || '不明なエラー';
+                        }
+                        
                         stopHtml5QrScanner();
-                        showMessage('カメラの起動に失敗しました。手動入力をお試しください。', 'error');
+                        showMessage(errorMsg, 'error');
                     });
+                } else {
+                    stopHtml5QrScanner();
+                    showMessage('カメラが見つかりません。', 'error');
                 }
             }).catch(err => {
                 console.error('Get cameras error:', err);
                 stopHtml5QrScanner();
-                showMessage('カメラが見つかりません。手動入力をお試しください。', 'error');
+                showMessage('カメラアクセスに失敗しました。', 'error');
             });
         }
         
@@ -462,6 +555,39 @@
         // スキャナー閉じるボタン
         document.getElementById('closeScannerBtn').addEventListener('click', stopHtml5QrScanner);
         
+        // ユーザーデータ読み込み
+        function loadUserData() {
+            // テスト用データ
+            currentStamps = [];
+            updateStampDisplay();
+        }
+        
+        // スタンプ表示更新
+        function updateStampDisplay() {
+            const stampCount = currentStamps.length;
+            document.getElementById('stampCount').textContent = stampCount;
+            
+            for (let i = 1; i <= 3; i++) {
+                const stampElement = document.getElementById('stamp' + i);
+                if (i <= stampCount) {
+                    stampElement.className = 'stamp collected';
+                    stampElement.textContent = '🎯';
+                } else {
+                    stampElement.className = 'stamp empty';
+                    stampElement.textContent = '📌';
+                }
+            }
+            
+            const applyButton = document.getElementById('applyPrize');
+            if (stampCount >= 2) {
+                applyButton.disabled = false;
+                applyButton.textContent = `賞品に応募する (商品券${stampCount >= 3 ? '2' : '1'}枚)`;
+            } else {
+                applyButton.disabled = true;
+                applyButton.textContent = '賞品に応募する (スタンプが足りません)';
+            }
+        }
+        
         // スタンプ獲得処理
         document.getElementById('submitStamp').addEventListener('click', function() {
             const qrCode = document.getElementById('qrInput').value.trim();
@@ -471,44 +597,24 @@
                 return;
             }
             
-            if (!userId) {
-                showMessage('ユーザー情報の取得に失敗しました', 'error');
-                return;
-            }
-            
             showLoading(true);
             
-            // GASに送信
-            fetch(GAS_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'addStamp',
-                    userId: userId,
-                    qrCode: qrCode,
-                    timestamp: new Date().toISOString()
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    currentStamps = data.stamps;
+            // テスト用の簡単な処理
+            setTimeout(() => {
+                if (qrCode.includes('STAMP_') || qrCode.length > 5) {
+                    currentStamps.push({
+                        companyId: qrCode,
+                        companyName: 'テスト店舗',
+                        timestamp: new Date()
+                    });
                     updateStampDisplay();
-                    showMessage(`スタンプを獲得しました！ (${data.companyName})`, 'success');
+                    showMessage('スタンプを獲得しました！', 'success');
                     document.getElementById('qrInput').value = '';
                 } else {
-                    showMessage(data.message || 'スタンプの獲得に失敗しました', 'error');
+                    showMessage('無効なQRコードです', 'error');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('ネットワークエラーが発生しました', 'error');
-            })
-            .finally(() => {
                 showLoading(false);
-            });
+            }, 1000);
         });
         
         // 賞品応募処理
@@ -518,105 +624,7 @@
                 return;
             }
             
-            // 応募フォームモーダルを開く
-            openApplicationModal();
-        });
-        
-        // 応募フォームモーダル関連
-        function openApplicationModal() {
-            const modal = document.getElementById('applicationModal');
-            const stampCount = currentStamps.length;
-            const prizeType = stampCount >= 3 ? '商品券2枚' : '商品券1枚';
-            
-            document.getElementById('prizeInfo').textContent = prizeType;
-            document.getElementById('stampInfo').textContent = stampCount + '個';
-            
-            modal.style.display = 'flex';
-        }
-        
-        function closeApplicationModal() {
-            document.getElementById('applicationModal').style.display = 'none';
-            document.getElementById('applicationForm').reset();
-        }
-        
-        // モーダル閉じるボタン
-        document.getElementById('closeModal').addEventListener('click', closeApplicationModal);
-        document.getElementById('cancelApplication').addEventListener('click', closeApplicationModal);
-        
-        // モーダル外クリックで閉じる
-        document.getElementById('applicationModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeApplicationModal();
-            }
-        });
-        
-        // 応募フォーム送信処理
-        document.getElementById('applicationForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // フォームデータ取得
-            const formData = {
-                fullName: document.getElementById('fullName').value.trim(),
-                zipCode: document.getElementById('zipCode').value.trim(),
-                address: document.getElementById('address').value.trim(),
-                phoneNumber: document.getElementById('phoneNumber').value.trim(),
-                email: document.getElementById('email').value.trim()
-            };
-            
-            // バリデーション
-            if (!formData.fullName || !formData.zipCode || !formData.address || !formData.phoneNumber) {
-                showMessage('必須項目をすべて入力してください', 'error');
-                return;
-            }
-            
-            // 郵便番号の形式チェック
-            const zipCodePattern = /^\d{3}-\d{4}$/;
-            if (!zipCodePattern.test(formData.zipCode)) {
-                showMessage('郵便番号は「123-4567」の形式で入力してください', 'error');
-                return;
-            }
-            
-            showLoading(true);
-            
-            // GASに送信
-            fetch(GAS_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    action: 'applyPrizeWithInfo',
-                    userId: userId,
-                    stampCount: currentStamps.length,
-                    personalInfo: formData,
-                    timestamp: new Date().toISOString()
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showMessage('賞品に応募しました！抽選をお楽しみに！', 'success');
-                    closeApplicationModal();
-                } else {
-                    showMessage(data.message || '応募に失敗しました', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('ネットワークエラーが発生しました', 'error');
-            })
-            .finally(() => {
-                showLoading(false);
-            });
-        });
-        
-        // 郵便番号自動ハイフン挿入
-        document.getElementById('zipCode').addEventListener('input', function(e) {
-            let value = e.target.value.replace(/[^\d]/g, '');
-            if (value.length >= 3) {
-                value = value.slice(0, 3) + '-' + value.slice(3, 7);
-            }
-            e.target.value = value;
+            showMessage('賞品に応募しました！（テストモード）', 'success');
         });
         
         // メッセージ表示
@@ -636,10 +644,7 @@
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
         
-        // QRコード入力のサンプル（テスト用）
-        function testStamp(companyId) {
-            document.getElementById('qrInput').value = `STAMP_${companyId}_${Date.now()}`;
-        }
+        console.log('App loaded successfully');
     </script>
 </body>
 </html>

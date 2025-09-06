@@ -268,12 +268,12 @@
 
     <script>
         // LIFF初期化
-        let liffId = '2008067578-By4EN4dJ'; // LINE Developersで作成したLIFF IDを設定
+        let liffId = 'YOUR_LIFF_ID'; // LINE Developersで作成したLIFF IDを設定
         let userId = '';
         let currentStamps = [];
         
         // GASのWebアプリURL
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzfjCybSCXRWj-lZsqQNDpj-Yb8bjwoNJIPLoqX7Ki01RiiYscX49oL06G2nKTQoAA/exec';
+        const GAS_URL = 'YOUR_GAS_WEB_APP_URL';
         
         // LIFF初期化
         liff.init({
@@ -397,17 +397,77 @@
                 return;
             }
             
+            // 応募フォームモーダルを開く
+            openApplicationModal();
+        });
+        
+        // 応募フォームモーダル関連
+        function openApplicationModal() {
+            const modal = document.getElementById('applicationModal');
+            const stampCount = currentStamps.length;
+            const prizeType = stampCount >= 3 ? '商品券2枚' : '商品券1枚';
+            
+            document.getElementById('prizeInfo').textContent = prizeType;
+            document.getElementById('stampInfo').textContent = stampCount + '個';
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeApplicationModal() {
+            document.getElementById('applicationModal').style.display = 'none';
+            document.getElementById('applicationForm').reset();
+        }
+        
+        // モーダル閉じるボタン
+        document.getElementById('closeModal').addEventListener('click', closeApplicationModal);
+        document.getElementById('cancelApplication').addEventListener('click', closeApplicationModal);
+        
+        // モーダル外クリックで閉じる
+        document.getElementById('applicationModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeApplicationModal();
+            }
+        });
+        
+        // 応募フォーム送信処理
+        document.getElementById('applicationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // フォームデータ取得
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                zipCode: document.getElementById('zipCode').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                phoneNumber: document.getElementById('phoneNumber').value.trim(),
+                email: document.getElementById('email').value.trim()
+            };
+            
+            // バリデーション
+            if (!formData.fullName || !formData.zipCode || !formData.address || !formData.phoneNumber) {
+                showMessage('必須項目をすべて入力してください', 'error');
+                return;
+            }
+            
+            // 郵便番号の形式チェック
+            const zipCodePattern = /^\d{3}-\d{4}$/;
+            if (!zipCodePattern.test(formData.zipCode)) {
+                showMessage('郵便番号は「123-4567」の形式で入力してください', 'error');
+                return;
+            }
+            
             showLoading(true);
             
+            // GASに送信
             fetch(GAS_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    action: 'applyPrize',
+                    action: 'applyPrizeWithInfo',
                     userId: userId,
                     stampCount: currentStamps.length,
+                    personalInfo: formData,
                     timestamp: new Date().toISOString()
                 })
             })
@@ -415,6 +475,7 @@
             .then(data => {
                 if (data.success) {
                     showMessage('賞品に応募しました！抽選をお楽しみに！', 'success');
+                    closeApplicationModal();
                 } else {
                     showMessage(data.message || '応募に失敗しました', 'error');
                 }
@@ -426,6 +487,15 @@
             .finally(() => {
                 showLoading(false);
             });
+        });
+        
+        // 郵便番号自動ハイフン挿入
+        document.getElementById('zipCode').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/[^\d]/g, '');
+            if (value.length >= 3) {
+                value = value.slice(0, 3) + '-' + value.slice(3, 7);
+            }
+            e.target.value = value;
         });
         
         // メッセージ表示

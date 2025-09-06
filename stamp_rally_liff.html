@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デジタルスタンプラリー</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .stamp-counter {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .stamp-display {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .stamp {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 3px solid #ddd;
+        }
+        
+        .stamp.collected {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border-color: #ff6b6b;
+            color: white;
+            animation: bounce 0.5s ease;
+        }
+        
+        .stamp.empty {
+            background: #f8f9fa;
+            color: #999;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+        
+        .qr-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .qr-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        
+        .qr-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .qr-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .qr-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .prize-section {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .prize-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #e17055, #fdcb6e);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .prize-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .prize-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .company-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .company-list h3 {
+            margin-bottom: 10px;
+            color: #495057;
+        }
+        
+        .company-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border-left: 3px solid #007bff;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 デジタルスタンプラリー</h1>
+            <p>40社参加！賞品を狙おう！</p>
+        </div>
+        
+        <div class="stamp-counter">
+            <h2>獲得スタンプ数: <span id="stampCount">0</span> / 40</h2>
+            <div class="stamp-display">
+                <div class="stamp empty" id="stamp1">📌</div>
+                <div class="stamp empty" id="stamp2">📌</div>
+                <div class="stamp empty" id="stamp3">📌</div>
+            </div>
+            <p>2つ以上のスタンプで応募可能！</p>
+        </div>
+        
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <div class="qr-section">
+            <h3>🔍 QRコードをスキャン</h3>
+            <p>各店舗のQRコードを読み取ってスタンプを集めよう！</p>
+            <input type="text" id="qrInput" class="qr-input" placeholder="QRコードの内容を入力 or 自動入力">
+            <button id="submitStamp" class="qr-button">スタンプを獲得する</button>
+        </div>
+        
+        <div class="prize-section">
+            <h3>🎁 賞品応募</h3>
+            <p>• 2スタンプ: 商品券1枚が当たる！</p>
+            <p>• 3スタンプ以上: 商品券2枚が当たる！</p>
+            <button id="applyPrize" class="prize-button" disabled>賞品に応募する</button>
+        </div>
+        
+        <div class="company-list">
+            <h3>参加企業一覧 (サンプル)</h3>
+            <div class="company-item">カフェ・レストラン (10社)</div>
+            <div class="company-item">小売・ショップ (15社)</div>
+            <div class="company-item">サービス業 (10社)</div>
+            <div class="company-item">その他 (5社)</div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+    </div>
+
+    <script>
+        // LIFF初期化
+        let liffId = 'YOUR_LIFF_ID'; // LINE Developersで作成したLIFF IDを設定
+        let userId = '';
+        let currentStamps = [];
+        
+        // GASのWebアプリURL
+        const GAS_URL = 'YOUR_GAS_WEB_APP_URL';
+        
+        // LIFF初期化
+        liff.init({
+            liffId: liffId
+        }).then(() => {
+            if (liff.isLoggedIn()) {
+                liff.getProfile().then(profile => {
+                    userId = profile.userId;
+                    loadUserData();
+                });
+            } else {
+                liff.login();
+            }
+        }).catch(err => {
+            console.error('LIFF initialization failed', err);
+            showMessage('LIFF初期化エラー: ' + err, 'error');
+        });
+        
+        // ユーザーデータ読み込み
+        function loadUserData() {
+            showLoading(true);
+            
+            fetch(GAS_URL + '?action=getUserStamps&userId=' + userId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentStamps = data.stamps || [];
+                        updateStampDisplay();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('データの読み込みに失敗しました', 'error');
+                })
+                .finally(() => {
+                    showLoading(false);
+                });
+        }
+        
+        // スタンプ表示更新
+        function updateStampDisplay() {
+            const stampCount = currentStamps.length;
+            document.getElementById('stampCount').textContent = stampCount;
+            
+            // スタンプアイコン更新
+            for (let i = 1; i <= 3; i++) {
+                const stampElement = document.getElementById('stamp' + i);
+                if (i <= stampCount) {
+                    stampElement.className = 'stamp collected';
+                    stampElement.textContent = '🎯';
+                } else {
+                    stampElement.className = 'stamp empty';
+                    stampElement.textContent = '📌';
+                }
+            }
+            
+            // 応募ボタン制御
+            const applyButton = document.getElementById('applyPrize');
+            if (stampCount >= 2) {
+                applyButton.disabled = false;
+                applyButton.textContent = `賞品に応募する (商品券${stampCount >= 3 ? '2' : '1'}枚)`;
+            } else {
+                applyButton.disabled = true;
+                applyButton.textContent = '賞品に応募する (スタンプが足りません)';
+            }
+        }
+        
+        // スタンプ獲得処理
+        document.getElementById('submitStamp').addEventListener('click', function() {
+            const qrCode = document.getElementById('qrInput').value.trim();
+            
+            if (!qrCode) {
+                showMessage('QRコードの内容を入力してください', 'error');
+                return;
+            }
+            
+            if (!userId) {
+                showMessage('ユーザー情報の取得に失敗しました', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            // GASに送信
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'addStamp',
+                    userId: userId,
+                    qrCode: qrCode,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentStamps = data.stamps;
+                    updateStampDisplay();
+                    showMessage(`スタンプを獲得しました！ (${data.companyName})`, 'success');
+                    document.getElementById('qrInput').value = '';
+                } else {
+                    showMessage(data.message || 'スタンプの獲得に失敗しました', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('ネットワークエラーが発生しました', 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        });
+        
+        // 賞品応募処理
+        document.getElementById('applyPrize').addEventListener('click', function() {
+            if (currentStamps.length < 2) {
+                showMessage('スタンプが足りません（2つ以上必要）', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'applyPrize',
+                    userId: userId,
+                    stampCount: currentStamps.length,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('賞品に応募しました！抽選をお楽しみに！', 'success');
+                } else {
+                    showMessage(data.message || '応募に失敗しました', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('ネットワークエラーが発生しました', 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
+        });
+        
+        // メッセージ表示
+        function showMessage(text, type) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            messageElement.className = `message ${type}`;
+            messageElement.style.display = 'block';
+            
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        // ローディング表示
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // QRコード入力のサンプル（テスト用）
+        function testStamp(companyId) {
+            document.getElementById('qrInput').value = `STAMP_${companyId}_${Date.now()}`;
+        }
+    </script>
+</body>
+</html>

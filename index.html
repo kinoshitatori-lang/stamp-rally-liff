@@ -635,16 +635,18 @@
             const stampList = currentStamps.map(s => s.companyId).join(', ');
             
             // GoogleフォームのURL（要変更）
-            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/viewform';
+            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/formResponse';
             
             // Googleフォームのパラメータ（フィールドIDを設定）
-            const formParams = new URLSearchParams({
-                // 以下は例です。実際のGoogleフォームのfield IDに変更してください
-                'entry.123456789': userId,           // ユーザーID
-                'entry.987654321': stampCount,       // スタンプ数
-                'entry.111111111': prizeType,        // 賞品種類
-                'entry.222222222': stampList,        // 獲得スタンプ一覧
-                'entry.333333333': new Date().toISOString() // 応募日時
+           const formParams = new URLSearchParams({
+    'entry.1339506372': userId,           // ユーザーID
+    'entry.1508709676': stampCount,       // スタンプ数
+    'entry.1048376800': prizeType,        // 賞品種類
+    'entry.1197154207': '', // 氏名は空（ユーザーが入力）
+    'entry.1052306893': '', // 郵便番号は空（ユーザーが入力）
+    'entry.364022216': '', // 住所は空（ユーザーが入力）
+    'entry.1089589890': '', // 電話番号は空（ユーザーが入力）
+    'entry.1470726628': ''  // メールは空（ユーザーが入力）        
             });
             
             const fullFormUrl = `${GOOGLE_FORM_URL}?${formParams.toString()}`;

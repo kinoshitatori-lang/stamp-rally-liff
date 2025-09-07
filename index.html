@@ -617,14 +617,55 @@
             }, 1000);
         });
         
-        // 賞品応募処理
+        // 賞品応募処理（Googleフォーム連携）
         document.getElementById('applyPrize').addEventListener('click', function() {
             if (currentStamps.length < 2) {
                 showMessage('スタンプが足りません（2つ以上必要）', 'error');
                 return;
             }
             
-            showMessage('賞品に応募しました！（テストモード）', 'success');
+            if (hasApplied) {
+                showMessage('既に応募済みです', 'error');
+                return;
+            }
+            
+            // Googleフォームのパラメータを準備
+            const stampCount = currentStamps.length;
+            const prizeType = stampCount >= 3 ? '商品券2枚' : '商品券1枚';
+            const stampList = currentStamps.map(s => s.companyId).join(', ');
+            
+            // GoogleフォームのURL（要変更）
+            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform';
+            
+            // Googleフォームのパラメータ（フィールドIDを設定）
+            const formParams = new URLSearchParams({
+                // 以下は例です。実際のGoogleフォームのfield IDに変更してください
+                'entry.123456789': userId,           // ユーザーID
+                'entry.987654321': stampCount,       // スタンプ数
+                'entry.111111111': prizeType,        // 賞品種類
+                'entry.222222222': stampList,        // 獲得スタンプ一覧
+                'entry.333333333': new Date().toISOString() // 応募日時
+            });
+            
+            const fullFormUrl = `${GOOGLE_FORM_URL}?${formParams.toString()}`;
+            
+            // 応募状態を更新（フォーム送信前に実行）
+            hasApplied = true;
+            updateStampDisplay();
+            
+            // Googleフォームを新しいウィンドウで開く
+            if (typeof liff !== 'undefined' && liff.isInClient) {
+                // LINE内の場合は外部ブラウザで開く
+                liff.openWindow({
+                    url: fullFormUrl,
+                    external: true
+                });
+            } else {
+                // 通常のブラウザの場合
+                window.open(fullFormUrl, '_blank');
+            }
+            
+            showMessage('Googleフォームを開きました。必要事項を入力して応募してください！', 'success');
         });
         
         // メッセージ表示

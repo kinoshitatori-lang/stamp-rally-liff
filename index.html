@@ -629,45 +629,85 @@
                 return;
             }
             
-            // Googleフォームのパラメータを準備
-            const stampCount = currentStamps.length;
-            const prizeType = stampCount >= 3 ? '商品券2枚' : '商品券1枚';
-            const stampList = currentStamps.map(s => s.companyId).join(', ');
+            // 簡単バージョン：Googleフォームのみ開く
+            // ⚠️ 重要: 以下のURLを実際のGoogleフォームのURLに変更してください ⚠️
+            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/viewform';
             
-            // GoogleフォームのURL（要変更）
-            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/formResponse';
-            
-            // Googleフォームのパラメータ（フィールドIDを設定）
-           const formParams = new URLSearchParams({
-    'entry.1339506372': userId,           // ユーザーID
-    'entry.1508709676': stampCount,       // スタンプ数
-    'entry.1048376800': prizeType,        // 賞品種類
-    'entry.1197154207': '', // 氏名は空（ユーザーが入力）
-    'entry.1052306893': '', // 郵便番号は空（ユーザーが入力）
-    'entry.364022216': '', // 住所は空（ユーザーが入力）
-    'entry.1089589890': '', // 電話番号は空（ユーザーが入力）
-    'entry.1470726628': ''  // メールは空（ユーザーが入力）        
-            });
-            
-            const fullFormUrl = `${GOOGLE_FORM_URL}?${formParams.toString()}`;
-            
-            // 応募状態を更新（フォーム送信前に実行）
+            // 応募状態を更新
             hasApplied = true;
             updateStampDisplay();
             
-            // Googleフォームを新しいウィンドウで開く
-            if (typeof liff !== 'undefined' && liff.isInClient) {
-                // LINE内の場合は外部ブラウザで開く
-                liff.openWindow({
-                    url: fullFormUrl,
-                    external: true
-                });
-            } else {
-                // 通常のブラウザの場合
-                window.open(fullFormUrl, '_blank');
-            }
+            console.log('Opening Google Form:', GOOGLE_FORM_URL);
             
-            showMessage('Googleフォームを開きました。必要事項を入力して応募してください！', 'success');
+            try {
+                // LIFFの場合とブラウザの場合で処理を分ける
+                if (typeof liff !== 'undefined' && liff.isInClient) {
+                    console.log('Opening in LINE external browser');
+                    // LINE内の場合は外部ブラウザで開く
+                    liff.openWindow({
+                        url: GOOGLE_FORM_URL,
+                        external: true
+                    });
+                    showMessage('外部ブラウザでGoogleフォームを開きました！', 'success');
+                } else {
+                    console.log('Opening in new tab/window');
+                    // 通常のブラウザの場合は新しいタブで開く
+                    const opened = window.open(GOOGLE_FORM_URL, '_blank');
+                    
+                    if (opened) {
+                        showMessage('新しいタブでGoogleフォームを開きました！', 'success');
+                    } else {
+                        // ポップアップブロックされた場合
+                        showMessage('ポップアップがブロックされました。以下のリンクから応募してください。', 'error');
+                        
+                        // フォールバック：リンクを表示
+                        const linkElement = document.createElement('a');
+                        linkElement.href = GOOGLE_FORM_URL;
+                        linkElement.target = '_blank';
+                        linkElement.textContent = 'Googleフォームで応募する';
+                        linkElement.style.cssText = `
+                            display: block;
+                            background: #4285f4;
+                            color: white;
+                            padding: 15px;
+                            text-decoration: none;
+                            border-radius: 8px;
+                            text-align: center;
+                            margin: 10px 0;
+                            font-weight: bold;
+                        `;
+                        
+                        // 応募ボタンの後に挿入
+                        document.getElementById('applyPrize').parentNode.insertBefore(
+                            linkElement, 
+                            document.getElementById('applyPrize').nextSibling
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to open Google Form:', error);
+                showMessage('フォームの開き方で問題が発生しました', 'error');
+                
+                // エラー時のフォールバック：直接リンクを表示
+                const fallbackLink = document.createElement('div');
+                fallbackLink.innerHTML = `
+                    <p style="margin: 10px 0; color: #666;">手動で以下のリンクをクリックしてください：</p>
+                    <a href="${GOOGLE_FORM_URL}" target="_blank" style="
+                        display: inline-block;
+                        background: #4285f4;
+                        color: white;
+                        padding: 12px 20px;
+                        text-decoration: none;
+                        border-radius: 5px;
+                        font-weight: bold;
+                    ">Googleフォームで応募する</a>
+                `;
+                
+                document.getElementById('applyPrize').parentNode.insertBefore(
+                    fallbackLink,
+                    document.getElementById('applyPrize').nextSibling
+                );
+            }
         });
         
         // メッセージ表示

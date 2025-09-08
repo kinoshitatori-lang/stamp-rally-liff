@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>デジタルスタンプラリー</title>
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -53,10 +52,11 @@
         }
         
         .stamp-display {
-            display: flex;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin: 15px 0;
+            justify-items: center;
         }
         
         .stamp {
@@ -66,7 +66,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 20px;
             border: 3px solid #ddd;
         }
         
@@ -82,13 +82,35 @@
             color: #999;
         }
         
+        .stamps-used .stamp {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+        
+        .stamps-used {
+            position: relative;
+        }
+        
+        .stamps-used::after {
+            content: '使用済み';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
         @keyframes bounce {
             0%, 20%, 60%, 100% { transform: translateY(0); }
             40% { transform: translateY(-10px); }
             80% { transform: translateY(-5px); }
         }
         
-        .qr-section {
+        .input-section {
             background: white;
             padding: 20px;
             border-radius: 12px;
@@ -96,61 +118,32 @@
             margin-bottom: 20px;
         }
         
-        .qr-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
+        .form-group {
+            margin-bottom: 15px;
         }
         
-        .scan-button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 16px;
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
             font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.2s;
+            color: #333;
         }
         
-        .scan-button:hover {
-            transform: translateY(-2px);
-        }
-        
-        .scan-button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .or-divider {
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-            position: relative;
-        }
-        
-        .or-divider:before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: #ddd;
-            z-index: 1;
-        }
-        
-        .qr-input {
+        .form-input {
             width: 100%;
-            padding: 15px;
+            padding: 12px;
             border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
+            box-sizing: border-box;
         }
         
-        .qr-button {
+        .form-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .submit-button {
             width: 100%;
             padding: 15px;
             background: linear-gradient(45deg, #4CAF50, #45a049);
@@ -163,92 +156,14 @@
             transition: transform 0.2s;
         }
         
-        .qr-button:hover {
+        .submit-button:hover {
             transform: translateY(-2px);
         }
         
-        .qr-button:disabled {
+        .submit-button:disabled {
             background: #ccc;
             cursor: not-allowed;
-        }
-        
-        /* QRスキャナー関連スタイル */
-        .qr-scanner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .scanner-header {
-            background: #333;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .scanner-header h4 {
-            margin: 0;
-            font-size: 16px;
-        }
-        
-        .close-scanner {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .close-scanner:hover {
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-        }
-        
-        .qr-reader {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        
-        .scanner-info {
-            background: #333;
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-        }
-        
-        .scanner-info p {
-            margin: 0;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-        
-        /* QRスキャナーのビデオ要素のスタイル調整 */
-        #qrReader video {
-            width: 100% !important;
-            height: auto !important;
-            max-height: 70vh;
-            object-fit: cover;
-        }
-        
-        #qrReader canvas {
-            display: none;
+            transform: none;
         }
         
         .prize-section {
@@ -280,6 +195,21 @@
         .prize-button:disabled {
             background: #ccc;
             cursor: not-allowed;
+            transform: none;
+        }
+        
+        .application-status {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+            text-align: center;
+        }
+        
+        .application-status p {
+            margin: 5px 0;
         }
         
         .message {
@@ -322,6 +252,25 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        .info-section {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .info-section h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        
+        .info-section p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #424242;
+        }
     </style>
 </head>
 <body>
@@ -332,46 +281,49 @@
         </div>
         
         <div class="stamp-counter">
-            <h2>獲得スタンプ数: <span id="stampCount">0</span> / 40</h2>
-            <div class="stamp-display">
+            <h2>獲得スタンプ数: <span id="stampCount">0</span> / 6</h2>
+            <div class="stamp-display" id="stampDisplay">
                 <div class="stamp empty" id="stamp1">📌</div>
                 <div class="stamp empty" id="stamp2">📌</div>
                 <div class="stamp empty" id="stamp3">📌</div>
+                <div class="stamp empty" id="stamp4">📌</div>
+                <div class="stamp empty" id="stamp5">📌</div>
+                <div class="stamp empty" id="stamp6">📌</div>
             </div>
             <p>2つ以上のスタンプで応募可能！</p>
         </div>
         
         <div id="message" class="message" style="display: none;"></div>
         
-        <div class="qr-section">
-            <h3>🔍 QRコードをスキャン</h3>
-            <p>各店舗のQRコードを読み取ってスタンプを集めよう！</p>
-            
-            <div class="qr-buttons">
-                <button id="scanQR" class="qr-button scan-button">📷 カメラでQRスキャン</button>
-                <div class="or-divider">または</div>
-                <input type="text" id="qrInput" class="qr-input" placeholder="QRコードの内容を手動入力">
-                <button id="submitStamp" class="qr-button">スタンプを獲得する</button>
+        <div class="info-section">
+            <h4>📝 スタンプ獲得方法</h4>
+            <p>• 各店舗で案内される「日付」と「合言葉」を入力</p>
+            <p>• 同じ日付・合言葉では1回のみ獲得可能</p>
+            <p>• 6つのスタンプを集めよう！</p>
+        </div>
+        
+        <div class="input-section">
+            <h3>🏪 スタンプを獲得する</h3>
+            <div class="form-group">
+                <label for="visitDate">訪問日付</label>
+                <input type="date" id="visitDate" class="form-input" required>
             </div>
-            
-            <!-- QRコードスキャナー -->
-            <div id="qrScanner" class="qr-scanner" style="display: none;">
-                <div class="scanner-header">
-                    <h4>📷 QRコードをカメラに向けてください</h4>
-                    <button id="closeScannerBtn" class="close-scanner">×</button>
-                </div>
-                <div id="qrReader" class="qr-reader"></div>
-                <div class="scanner-info">
-                    <p>QRコードが見つからない場合は、カメラを近づけるか明るい場所で試してください</p>
-                </div>
+            <div class="form-group">
+                <label for="keyword">合言葉</label>
+                <input type="text" id="keyword" class="form-input" placeholder="店舗で案内された合言葉を入力" required>
             </div>
+            <button id="submitStamp" class="submit-button">スタンプを獲得する</button>
         </div>
         
         <div class="prize-section">
             <h3>🎁 賞品応募</h3>
             <p>• 2スタンプ: 商品券1枚が当たる！</p>
             <p>• 3スタンプ以上: 商品券2枚が当たる！</p>
-            <button id="applyPrize" class="prize-button" disabled>賞品に応募する</button>
+            <div id="applicationStatus" class="application-status" style="display: none;">
+                <p>✅ 応募完了済み</p>
+                <p><small>スタンプは使用済みです</small></p>
+            </div>
+            <button id="applyPrize" class="prize-button" disabled onclick="handleApplyClick()">賞品に応募する</button>
         </div>
         
         <div class="loading" id="loading">
@@ -382,15 +334,13 @@
 
     <script>
         // ⚠️ 重要: 以下の値を実際の値に変更してください ⚠️
-        let liffId = '2008067578-By4EN4dJ';  // ← LINE Developersで取得したLIFF IDに変更
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyzfjCybSCXRWj-lZsqQNDpj-Yb8bjwoNJIPLoqX7Ki01RiiYscX49oL06G2nKTQoAA/exec';  // ← GASのWebアプリURLに変更
+        let liffId = 'YOUR_LIFF_ID';  // LINE Developersで取得したLIFF IDに変更
+        const GAS_URL = 'YOUR_GAS_WEB_APP_URL';  // GASのWebアプリURLに変更
+        const GOOGLE_FORM_URL = 'YOUR_GOOGLE_FORM_URL'; // GoogleフォームのURLに変更
         
         let userId = '';
         let currentStamps = [];
-        
-        // QRコードスキャナー関連の変数
-        let html5QrCode = null;
-        let isScanning = false;
+        let hasApplied = false; // 応募済みフラグ
         
         // LIFF初期化
         if (typeof liff !== 'undefined') {
@@ -410,156 +360,43 @@
                 showMessage('LIFF初期化エラー: ' + err, 'error');
                 // LIFF失敗時もアプリは動作させる（テスト用）
                 userId = 'test_user_' + Date.now();
+                loadUserData();
             });
         } else {
             console.log('LIFF not available, running in test mode');
             userId = 'test_user_' + Date.now();
+            loadUserData();
         }
-        
-        // QRコードスキャン機能
-        document.getElementById('scanQR').addEventListener('click', function() {
-            console.log('Scan button clicked');
-            
-            // LIFFが利用可能でかつLINE内の場合は、LIFF機能を優先
-            if (typeof liff !== 'undefined' && liff.isInClient && liff.isApiAvailable && liff.isApiAvailable('scanCodeV2')) {
-                console.log('Using LIFF scanner');
-                liff.scanCodeV2()
-                    .then(result => {
-                        document.getElementById('qrInput').value = result.value;
-                        showMessage('QRコードを読み取りました！', 'success');
-                        setTimeout(() => {
-                            document.getElementById('submitStamp').click();
-                        }, 1000);
-                    })
-                    .catch(error => {
-                        console.error('LIFF QR scan error:', error);
-                        // LIFF失敗時はHTML5スキャナーにフォールバック
-                        startHtml5QrScanner();
-                    });
-            } else {
-                console.log('Using HTML5 scanner');
-                // LINE外またはLIFF非対応の場合はHTML5スキャナーを使用
-                startHtml5QrScanner();
-            }
-        });
-        
-        // HTML5 QRスキャナー開始
-        function startHtml5QrScanner() {
-            if (isScanning) return;
-            
-            console.log('Starting HTML5 QR scanner');
-            showMessage('カメラを準備中...', 'success');
-            
-            const qrScannerDiv = document.getElementById('qrScanner');
-            qrScannerDiv.style.display = 'flex';
-            
-            html5QrCode = new Html5Qrcode('qrReader');
-            isScanning = true;
-            
-            // カメラ設定
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0,
-                disableFlip: false
-            };
-            
-            // まずカメラ一覧を取得
-            Html5Qrcode.getCameras().then(devices => {
-                console.log('Found cameras:', devices);
-                
-                if (devices && devices.length) {
-                    showMessage(`${devices.length}個のカメラが見つかりました`, 'success');
-                    
-                    let cameraId = devices[0].id;
-                    let selectedCamera = devices[0];
-                    
-                    // 背面カメラを探す
-                    for (let device of devices) {
-                        if (device.label.toLowerCase().includes('back') || 
-                            device.label.toLowerCase().includes('rear') ||
-                            device.label.toLowerCase().includes('environment')) {
-                            cameraId = device.id;
-                            selectedCamera = device;
-                            break;
-                        }
-                    }
-                    
-                    console.log('Selected camera:', selectedCamera);
-                    showMessage(`カメラを起動中...`, 'success');
-                    
-                    html5QrCode.start(
-                        cameraId,
-                        config,
-                        (decodedText, decodedResult) => {
-                            console.log('QR Code detected:', decodedText);
-                            stopHtml5QrScanner();
-                            document.getElementById('qrInput').value = decodedText;
-                            showMessage('QRコードを読み取りました！', 'success');
-                            setTimeout(() => {
-                                document.getElementById('submitStamp').click();
-                            }, 1000);
-                        },
-                        (errorMessage) => {
-                            // スキャンエラー（通常のスキャン中は無視）
-                        }
-                    ).then(() => {
-                        console.log('Camera started successfully');
-                        showMessage('カメラが起動しました！', 'success');
-                    }).catch(err => {
-                        console.error('Camera start error:', err);
-                        let errorMsg = 'カメラエラー: ';
-                        
-                        if (err.name === 'NotAllowedError') {
-                            errorMsg += 'カメラアクセスが拒否されました。';
-                        } else if (err.name === 'NotFoundError') {
-                            errorMsg += 'カメラが見つかりません。';
-                        } else if (err.name === 'NotReadableError') {
-                            errorMsg += 'カメラが使用中です。';
-                        } else {
-                            errorMsg += err.message || '不明なエラー';
-                        }
-                        
-                        stopHtml5QrScanner();
-                        showMessage(errorMsg, 'error');
-                    });
-                } else {
-                    stopHtml5QrScanner();
-                    showMessage('カメラが見つかりません。', 'error');
-                }
-            }).catch(err => {
-                console.error('Get cameras error:', err);
-                stopHtml5QrScanner();
-                showMessage('カメラアクセスに失敗しました。', 'error');
-            });
-        }
-        
-        // HTML5 QRスキャナー停止
-        function stopHtml5QrScanner() {
-            if (html5QrCode && isScanning) {
-                html5QrCode.stop().then(() => {
-                    html5QrCode.clear();
-                    document.getElementById('qrScanner').style.display = 'none';
-                    isScanning = false;
-                }).catch(err => {
-                    console.error('Stop scanner error:', err);
-                    document.getElementById('qrScanner').style.display = 'none';
-                    isScanning = false;
-                });
-            } else {
-                document.getElementById('qrScanner').style.display = 'none';
-                isScanning = false;
-            }
-        }
-        
-        // スキャナー閉じるボタン
-        document.getElementById('closeScannerBtn').addEventListener('click', stopHtml5QrScanner);
         
         // ユーザーデータ読み込み
         function loadUserData() {
-            // テスト用データ
-            currentStamps = [];
-            updateStampDisplay();
+            if (GAS_URL === 'YOUR_GAS_WEB_APP_URL') {
+                // テストモード
+                console.log('Running in test mode');
+                updateStampDisplay();
+                return;
+            }
+            
+            showLoading(true);
+            
+            fetch(GAS_URL + '?action=getUserData&userId=' + userId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentStamps = data.stamps || [];
+                        hasApplied = data.hasApplied || false;
+                        updateStampDisplay();
+                    } else {
+                        showMessage('データの読み込みに失敗しました', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('ネットワークエラーが発生しました', 'error');
+                })
+                .finally(() => {
+                    showLoading(false);
+                });
         }
         
         // スタンプ表示更新
@@ -567,7 +404,18 @@
             const stampCount = currentStamps.length;
             document.getElementById('stampCount').textContent = stampCount;
             
-            for (let i = 1; i <= 3; i++) {
+            console.log('Updating stamp display, count:', stampCount, 'hasApplied:', hasApplied);
+            
+            // 応募済みの場合、スタンプ表示をグレーアウト
+            const stampDisplay = document.getElementById('stampDisplay');
+            if (hasApplied) {
+                stampDisplay.classList.add('stamps-used');
+            } else {
+                stampDisplay.classList.remove('stamps-used');
+            }
+            
+            // 6つのスタンプを更新
+            for (let i = 1; i <= 6; i++) {
                 const stampElement = document.getElementById('stamp' + i);
                 if (i <= stampCount) {
                     stampElement.className = 'stamp collected';
@@ -579,46 +427,152 @@
             }
             
             const applyButton = document.getElementById('applyPrize');
-            if (stampCount >= 2) {
+            const applicationStatus = document.getElementById('applicationStatus');
+            
+            if (hasApplied) {
+                // 応募済みの場合
+                applyButton.style.display = 'none';
+                applicationStatus.style.display = 'block';
+            } else if (stampCount >= 2) {
+                // 応募可能の場合
                 applyButton.disabled = false;
-                applyButton.textContent = `賞品に応募する (商品券${stampCount >= 3 ? '2' : '1'}枚)`;
+                applyButton.style.display = 'block';
+                applyButton.textContent = `Googleフォームで応募する (商品券${stampCount >= 3 ? '2' : '1'}枚)`;
+                applicationStatus.style.display = 'none';
             } else {
+                // スタンプが不足の場合
                 applyButton.disabled = true;
+                applyButton.style.display = 'block';
                 applyButton.textContent = '賞品に応募する (スタンプが足りません)';
+                applicationStatus.style.display = 'none';
+            }
+            
+            // 応募済みの場合、新しいスタンプ獲得を無効化
+            const submitButton = document.getElementById('submitStamp');
+            const visitDateInput = document.getElementById('visitDate');
+            const keywordInput = document.getElementById('keyword');
+            
+            if (hasApplied) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'スタンプ獲得（応募済みのため無効）';
+                visitDateInput.disabled = true;
+                keywordInput.disabled = true;
+            } else {
+                submitButton.disabled = false;
+                submitButton.textContent = 'スタンプを獲得する';
+                visitDateInput.disabled = false;
+                keywordInput.disabled = false;
             }
         }
         
         // スタンプ獲得処理
         document.getElementById('submitStamp').addEventListener('click', function() {
-            const qrCode = document.getElementById('qrInput').value.trim();
+            const visitDate = document.getElementById('visitDate').value.trim();
+            const keyword = document.getElementById('keyword').value.trim();
             
-            if (!qrCode) {
-                showMessage('QRコードの内容を入力してください', 'error');
+            console.log('Submit clicked:', { visitDate, keyword });
+            
+            if (!visitDate || !keyword) {
+                showMessage('訪問日付と合言葉を両方入力してください', 'error');
+                return;
+            }
+            
+            // 応募済みの場合は新しいスタンプを獲得できない
+            if (hasApplied) {
+                showMessage('応募済みのため、新しいスタンプは獲得できません', 'error');
                 return;
             }
             
             showLoading(true);
             
-            // テスト用の簡単な処理
-            setTimeout(() => {
-                if (qrCode.includes('STAMP_') || qrCode.length > 5) {
-                    currentStamps.push({
-                        companyId: qrCode,
-                        companyName: 'テスト店舗',
-                        timestamp: new Date()
-                    });
+            if (GAS_URL === 'YOUR_GAS_WEB_APP_URL') {
+                // テストモード
+                setTimeout(() => {
+                    testStampAcquisition(visitDate, keyword);
+                }, 1000);
+                return;
+            }
+            
+            // GASに送信
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'addStamp',
+                    userId: userId,
+                    visitDate: visitDate,
+                    keyword: keyword,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentStamps = data.stamps;
                     updateStampDisplay();
-                    showMessage('スタンプを獲得しました！', 'success');
-                    document.getElementById('qrInput').value = '';
+                    showMessage(`スタンプを獲得しました！ (${data.companyName || '店舗名'})`, 'success');
+                    // 入力欄をクリア
+                    document.getElementById('visitDate').value = '';
+                    document.getElementById('keyword').value = '';
                 } else {
-                    showMessage('無効なQRコードです', 'error');
+                    showMessage(data.message || 'スタンプの獲得に失敗しました', 'error');
                 }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('ネットワークエラーが発生しました', 'error');
+            })
+            .finally(() => {
                 showLoading(false);
-            }, 1000);
+            });
         });
         
-        // 賞品応募処理（Googleフォーム連携）
-        document.getElementById('applyPrize').addEventListener('click', function() {
+        // テストモード用のスタンプ獲得処理
+        function testStampAcquisition(visitDate, keyword) {
+            // 重複チェック（日付と合言葉の組み合わせ）
+            const stampKey = visitDate + '_' + keyword;
+            const isDuplicate = currentStamps.some(stamp => stamp.stampKey === stampKey);
+            
+            if (isDuplicate) {
+                showMessage('この日付と合言葉の組み合わせは既に使用済みです', 'error');
+                showLoading(false);
+                return;
+            }
+            
+            // スタンプ上限チェック
+            if (currentStamps.length >= 6) {
+                showMessage('スタンプは最大6個までです', 'error');
+                showLoading(false);
+                return;
+            }
+            
+            // 新しいスタンプを追加
+            currentStamps.push({
+                stampKey: stampKey,
+                visitDate: visitDate,
+                keyword: keyword,
+                companyName: 'テスト店舗',
+                timestamp: new Date().toISOString()
+            });
+            
+            updateStampDisplay();
+            showMessage('スタンプを獲得しました！（テストモード）', 'success');
+            
+            // 入力欄をクリア
+            document.getElementById('visitDate').value = '';
+            document.getElementById('keyword').value = '';
+            
+            showLoading(false);
+        }
+        
+        // 賞品応募処理（確実に動作するバージョン）
+        function handleApplyClick() {
+            console.log('=== APPLY BUTTON CLICKED ===');
+            console.log('Current stamps:', currentStamps.length);
+            console.log('Has applied:', hasApplied);
+            
             if (currentStamps.length < 2) {
                 showMessage('スタンプが足りません（2つ以上必要）', 'error');
                 return;
@@ -629,86 +583,125 @@
                 return;
             }
             
-            // 簡単バージョン：Googleフォームのみ開く
-            // ⚠️ 重要: 以下のURLを実際のGoogleフォームのURLに変更してください ⚠️
-            const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/viewform';
-            
             // 応募状態を更新
             hasApplied = true;
             updateStampDisplay();
             
-            console.log('Opening Google Form:', GOOGLE_FORM_URL);
+            if (GOOGLE_FORM_URL === 'YOUR_GOOGLE_FORM_URL') {
+                // テストモード
+                showTestApplicationComplete();
+                return;
+            }
             
+            // Googleフォームを開く
             try {
-                // LIFFの場合とブラウザの場合で処理を分ける
                 if (typeof liff !== 'undefined' && liff.isInClient) {
-                    console.log('Opening in LINE external browser');
-                    // LINE内の場合は外部ブラウザで開く
                     liff.openWindow({
                         url: GOOGLE_FORM_URL,
                         external: true
                     });
                     showMessage('外部ブラウザでGoogleフォームを開きました！', 'success');
                 } else {
-                    console.log('Opening in new tab/window');
-                    // 通常のブラウザの場合は新しいタブで開く
                     const opened = window.open(GOOGLE_FORM_URL, '_blank');
-                    
                     if (opened) {
                         showMessage('新しいタブでGoogleフォームを開きました！', 'success');
                     } else {
-                        // ポップアップブロックされた場合
-                        showMessage('ポップアップがブロックされました。以下のリンクから応募してください。', 'error');
-                        
-                        // フォールバック：リンクを表示
-                        const linkElement = document.createElement('a');
-                        linkElement.href = GOOGLE_FORM_URL;
-                        linkElement.target = '_blank';
-                        linkElement.textContent = 'Googleフォームで応募する';
-                        linkElement.style.cssText = `
-                            display: block;
-                            background: #4285f4;
-                            color: white;
-                            padding: 15px;
-                            text-decoration: none;
-                            border-radius: 8px;
-                            text-align: center;
-                            margin: 10px 0;
-                            font-weight: bold;
-                        `;
-                        
-                        // 応募ボタンの後に挿入
-                        document.getElementById('applyPrize').parentNode.insertBefore(
-                            linkElement, 
-                            document.getElementById('applyPrize').nextSibling
-                        );
+                        showFormLink();
                     }
                 }
+                
+                // GASに応募状態を保存（本番環境の場合）
+                if (GAS_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                    saveApplicationStatus();
+                }
+                
             } catch (error) {
                 console.error('Failed to open Google Form:', error);
-                showMessage('フォームの開き方で問題が発生しました', 'error');
-                
-                // エラー時のフォールバック：直接リンクを表示
-                const fallbackLink = document.createElement('div');
-                fallbackLink.innerHTML = `
-                    <p style="margin: 10px 0; color: #666;">手動で以下のリンクをクリックしてください：</p>
-                    <a href="${GOOGLE_FORM_URL}" target="_blank" style="
-                        display: inline-block;
-                        background: #4285f4;
-                        color: white;
-                        padding: 12px 20px;
-                        text-decoration: none;
-                        border-radius: 5px;
-                        font-weight: bold;
-                    ">Googleフォームで応募する</a>
-                `;
-                
-                document.getElementById('applyPrize').parentNode.insertBefore(
-                    fallbackLink,
-                    document.getElementById('applyPrize').nextSibling
-                );
+                showFormLink();
             }
-        });
+        }
+        
+        // テスト用応募完了表示
+        function showTestApplicationComplete() {
+            showMessage('🎉 応募完了しました！（テストモード）', 'success');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.style.cssText = `
+                background: #e8f5e8;
+                border: 3px solid #4CAF50;
+                padding: 20px;
+                border-radius: 15px;
+                margin: 20px 0;
+                text-align: center;
+                animation: bounce 0.5s ease;
+            `;
+            resultDiv.innerHTML = `
+                <h3>🎉 応募完了！</h3>
+                <p><strong>スタンプ数:</strong> ${currentStamps.length}個</p>
+                <p><strong>応募賞品:</strong> 商品券${currentStamps.length >= 3 ? '2' : '1'}枚</p>
+                <p><strong>応募日時:</strong> ${new Date().toLocaleString()}</p>
+                <hr style="margin: 15px 0; border: 1px solid #4CAF50;">
+                <p style="color: #666; font-size: 14px;">
+                    抽選結果をお楽しみに！<br>
+                    （本番ではGoogleフォームが開きます）
+                </p>
+            `;
+            
+            const prizeSection = document.querySelector('.prize-section');
+            prizeSection.appendChild(resultDiv);
+        }
+        
+        // フォームリンクを表示
+        function showFormLink() {
+            const linkDiv = document.createElement('div');
+            linkDiv.style.cssText = `
+                background: #f0f8ff;
+                border: 2px solid #4285f4;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 15px 0;
+                text-align: center;
+            `;
+            linkDiv.innerHTML = `
+                <p style="margin-bottom: 15px;">手動でフォームを開いてください：</p>
+                <a href="${GOOGLE_FORM_URL}" target="_blank" style="
+                    display: inline-block;
+                    background: #4285f4;
+                    color: white;
+                    padding: 15px 25px;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 16px;
+                ">📝 Googleフォームで応募する</a>
+            `;
+            
+            document.querySelector('.prize-section').appendChild(linkDiv);
+        }
+        
+        // 使用済みスタンプをGASに保存
+        function saveUsedStamps(stampsUsed, prizeName) {
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'recordApplication',
+                    userId: userId,
+                    stampsUsed: stampsUsed,
+                    prizeName: prizeName,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Used stamps saved:', data);
+            })
+            .catch(error => {
+                console.error('Failed to save used stamps:', error);
+            });
+        }
         
         // メッセージ表示
         function showMessage(text, type) {
@@ -726,6 +719,9 @@
         function showLoading(show) {
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
+        
+        // 今日の日付をデフォルト設定
+        document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
         
         console.log('App loaded successfully');
     </script>

@@ -299,6 +299,7 @@
             <h4>📝 スタンプ獲得方法</h4>
             <p>• 各店舗で案内される「日付」と「合言葉」を入力</p>
             <p>• 同じ日付・合言葉では1回のみ獲得可能</p>
+            <p>• 6つのスタンプを集めよう！</p>
         </div>
         
         <div class="input-section">
@@ -322,8 +323,7 @@
                 <p>✅ 応募完了済み</p>
                 <p><small>スタンプは使用済みです</small></p>
             </div>
-            <button id="applyPrize" class="prize-button" disabled onclick="handleApplyClick()">賞品に応募する（スタンプ2個）</button>
- 　　　　　　<button id="applyPrize" class="prize-button" disabled onclick="handleApplyClick()">賞品に応募する（スタンプ3個）</button>
+            <button id="applyPrize" class="prize-button" disabled onclick="handleApplyClick()">賞品に応募する</button>
         </div>
         
         <div class="loading" id="loading">
@@ -334,9 +334,9 @@
 
     <script>
         // ⚠️ 重要: 以下の値を実際の値に変更してください ⚠️
-        let liffId = '2008067578-By4EN4dJ';  // LINE Developersで取得したLIFF IDに変更
-        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxs7Y_a6abx_qiVDJKaNFNN21EU6jcv0aQ_4GBWqyuxvirrL-uqs0OY4F8uPNplAQDa/exec';  // GASのWebアプリURLに変更
-        const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/viewform'; // GoogleフォームのURLに変更
+        let liffId = 'YOUR_LIFF_ID';  // LINE Developersで取得したLIFF IDに変更
+        const GAS_URL = 'YOUR_GAS_WEB_APP_URL';  // GASのWebアプリURLに変更
+        const GOOGLE_FORM_URL = 'YOUR_GOOGLE_FORM_URL'; // GoogleフォームのURLに変更
         
         let userId = '';
         let currentStamps = [];

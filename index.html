@@ -1,76 +1,730 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>デジタルスタンプラリー</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 2em; }
-    h1 { font-size: 1.4em; color: #333; }
-    input, button { padding: 0.6em; margin: 0.5em 0; width: 100%; }
-    #result { margin-top: 1em; color: green; font-weight: bold; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>デジタルスタンプラリー</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .stamp-counter {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .stamp-display {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+            justify-items: center;
+        }
+        
+        .stamp {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            border: 3px solid #ddd;
+        }
+        
+        .stamp.collected {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border-color: #ff6b6b;
+            color: white;
+            animation: bounce 0.5s ease;
+        }
+        
+        .stamp.empty {
+            background: #f8f9fa;
+            color: #999;
+        }
+        
+        .stamps-used .stamp {
+            filter: grayscale(100%);
+            opacity: 0.6;
+        }
+        
+        .stamps-used {
+            position: relative;
+        }
+        
+        .stamps-used::after {
+            content: '使用済み';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 60%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            80% { transform: translateY(-5px); }
+        }
+        
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .submit-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .submit-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .submit-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .prize-section {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .prize-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(45deg, #e17055, #fdcb6e);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+        
+        .prize-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .prize-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .application-status {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+            text-align: center;
+        }
+        
+        .application-status p {
+            margin: 5px 0;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .info-section {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .info-section h4 {
+            color: #1976D2;
+            margin-bottom: 10px;
+        }
+        
+        .info-section p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #424242;
+        }
+    </style>
 </head>
 <body>
-  <h1>スタンプラリーに参加しよう！</h1>
-  <p>合言葉を入力してください。</p>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 デジタルスタンプラリー</h1>
+            <p>40社参加！賞品を狙おう！</p>
+        </div>
+        
+        <div class="stamp-counter">
+            <h2>獲得スタンプ数: <span id="stampCount">0</span> / 6</h2>
+            <div class="stamp-display" id="stampDisplay">
+                <div class="stamp empty" id="stamp1">📌</div>
+                <div class="stamp empty" id="stamp2">📌</div>
+                <div class="stamp empty" id="stamp3">📌</div>
+                <div class="stamp empty" id="stamp4">📌</div>
+                <div class="stamp empty" id="stamp5">📌</div>
+                <div class="stamp empty" id="stamp6">📌</div>
+            </div>
+            <p>2つ以上のスタンプで応募可能！</p>
+        </div>
+        
+        <div id="message" class="message" style="display: none;"></div>
+        
+        <div class="info-section">
+            <h4>📝 スタンプ獲得方法</h4>
+            <p>• 各店舗で案内される「日付」と「合言葉」を入力</p>
+            <p>• 同じ日付・合言葉では1回のみ獲得可能</p>
+            <p>• 6つのスタンプを集めよう！</p>
+        </div>
+        
+        <div class="input-section">
+            <h3>🏪 スタンプを獲得する</h3>
+            <div class="form-group">
+                <label for="visitDate">訪問日付</label>
+                <input type="date" id="visitDate" class="form-input" required>
+            </div>
+            <div class="form-group">
+                <label for="keyword">合言葉</label>
+                <input type="text" id="keyword" class="form-input" placeholder="店舗で案内された合言葉を入力" required>
+            </div>
+            <button id="submitStamp" class="submit-button">スタンプを獲得する</button>
+        </div>
+        
+        <div class="prize-section">
+            <h3>🎁 賞品応募</h3>
+            <p>• 2スタンプ: 商品券1枚が当たる！</p>
+            <p>• 3スタンプ以上: 商品券2枚が当たる！</p>
+            <div id="applicationStatus" class="application-status" style="display: none;">
+                <p>✅ 応募完了済み</p>
+                <p><small>スタンプは使用済みです</small></p>
+            </div>
+            <button id="applyPrize" class="prize-button" disabled onclick="handleApplyClick()">賞品に応募する（スタンプ2個）</button>
+ 　　　　　　<button id="applyPrize" class="prize-button" disabled onclick="handleApplyClick()">賞品に応募する（スタンプ３個）</button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+    </div>
 
-  <!-- 合言葉入力欄 -->
-  <input type="text" id="keyword" placeholder="ここに合言葉を入力">
-  <button id="submitBtn">スタンプ獲得</button>
-
-  <!-- 結果表示 -->
-  <p id="result"></p>
-
-  <script>
-    // 🔧 必要な設定（ここを書き換えてください）
-    const LIFF_ID = "2008067578-By4EN4dJ"; // LINE Developers で発行した LIFF ID
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxs7Y_a6abx_qiVDJKaNFNN21EU6jcv0aQ_4GBWqyuxvirrL-uqs0OY4F8uPNplAQDa/exec"; // デプロイしたGASのWebアプリURL
-
-    let userId = "";
-
-    // LIFF初期化
-    async function initLiff() {
-      await liff.init({ liffId: LIFF_ID });
-
-      if (!liff.isLoggedIn()) {
-        liff.login(); // 未ログインならログイン
-      } else {
-        const profile = await liff.getProfile();
-        userId = profile.userId; // LINEのユーザーID取得
-      }
-    }
-
-    // ボタンクリック処理
-    document.getElementById("submitBtn").addEventListener("click", async () => {
-      const keyword = document.getElementById("keyword").value;
-
-      if (!keyword) {
-        document.getElementById("result").textContent = "合言葉を入力してください。";
-        return;
-      }
-
-      try {
-        const response = await fetch(GAS_URL, {
-          method: "POST",
-          mode: "cors",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: userId,
-            keyword: keyword
-          })
+    <script>
+        // ⚠️ 重要: 以下の値を実際の値に変更してください ⚠️
+        let liffId = '2008067578-By4EN4dJ';  // LINE Developersで取得したLIFF IDに変更
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxs7Y_a6abx_qiVDJKaNFNN21EU6jcv0aQ_4GBWqyuxvirrL-uqs0OY4F8uPNplAQDa/exec';  // GASのWebアプリURLに変更
+        const GOOGLE_FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfJpTuEes6OqoDVIJqhdLjSfAJey3560soOPblBinPecUivDQ/viewform'; // GoogleフォームのURLに変更
+        
+        let userId = '';
+        let currentStamps = [];
+        let hasApplied = false; // 応募済みフラグ
+        
+        // LIFF初期化
+        if (typeof liff !== 'undefined') {
+            liff.init({
+                liffId: liffId
+            }).then(() => {
+                if (liff.isLoggedIn()) {
+                    liff.getProfile().then(profile => {
+                        userId = profile.userId;
+                        loadUserData();
+                    });
+                } else {
+                    liff.login();
+                }
+            }).catch(err => {
+                console.error('LIFF initialization failed', err);
+                showMessage('LIFF初期化エラー: ' + err, 'error');
+                // LIFF失敗時もアプリは動作させる（テスト用）
+                userId = 'test_user_' + Date.now();
+                loadUserData();
+            });
+        } else {
+            console.log('LIFF not available, running in test mode');
+            userId = 'test_user_' + Date.now();
+            loadUserData();
+        }
+        
+        // ユーザーデータ読み込み
+        function loadUserData() {
+            if (GAS_URL === 'YOUR_GAS_WEB_APP_URL') {
+                // テストモード
+                console.log('Running in test mode');
+                updateStampDisplay();
+                return;
+            }
+            
+            showLoading(true);
+            
+            fetch(GAS_URL + '?action=getUserData&userId=' + userId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentStamps = data.stamps || [];
+                        hasApplied = data.hasApplied || false;
+                        updateStampDisplay();
+                    } else {
+                        showMessage('データの読み込みに失敗しました', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showMessage('ネットワークエラーが発生しました', 'error');
+                })
+                .finally(() => {
+                    showLoading(false);
+                });
+        }
+        
+        // スタンプ表示更新
+        function updateStampDisplay() {
+            const stampCount = currentStamps.length;
+            document.getElementById('stampCount').textContent = stampCount;
+            
+            console.log('Updating stamp display, count:', stampCount, 'hasApplied:', hasApplied);
+            
+            // 応募済みの場合、スタンプ表示をグレーアウト
+            const stampDisplay = document.getElementById('stampDisplay');
+            if (hasApplied) {
+                stampDisplay.classList.add('stamps-used');
+            } else {
+                stampDisplay.classList.remove('stamps-used');
+            }
+            
+            // 6つのスタンプを更新
+            for (let i = 1; i <= 6; i++) {
+                const stampElement = document.getElementById('stamp' + i);
+                if (i <= stampCount) {
+                    stampElement.className = 'stamp collected';
+                    stampElement.textContent = '🎯';
+                } else {
+                    stampElement.className = 'stamp empty';
+                    stampElement.textContent = '📌';
+                }
+            }
+            
+            const applyButton = document.getElementById('applyPrize');
+            const applicationStatus = document.getElementById('applicationStatus');
+            
+            if (hasApplied) {
+                // 応募済みの場合
+                applyButton.style.display = 'none';
+                applicationStatus.style.display = 'block';
+            } else if (stampCount >= 2) {
+                // 応募可能の場合
+                applyButton.disabled = false;
+                applyButton.style.display = 'block';
+                applyButton.textContent = `Googleフォームで応募する (商品券${stampCount >= 3 ? '2' : '1'}枚)`;
+                applicationStatus.style.display = 'none';
+            } else {
+                // スタンプが不足の場合
+                applyButton.disabled = true;
+                applyButton.style.display = 'block';
+                applyButton.textContent = '賞品に応募する (スタンプが足りません)';
+                applicationStatus.style.display = 'none';
+            }
+            
+            // 応募済みの場合、新しいスタンプ獲得を無効化
+            const submitButton = document.getElementById('submitStamp');
+            const visitDateInput = document.getElementById('visitDate');
+            const keywordInput = document.getElementById('keyword');
+            
+            if (hasApplied) {
+                submitButton.disabled = true;
+                submitButton.textContent = 'スタンプ獲得（応募済みのため無効）';
+                visitDateInput.disabled = true;
+                keywordInput.disabled = true;
+            } else {
+                submitButton.disabled = false;
+                submitButton.textContent = 'スタンプを獲得する';
+                visitDateInput.disabled = false;
+                keywordInput.disabled = false;
+            }
+        }
+        
+        // スタンプ獲得処理
+        document.getElementById('submitStamp').addEventListener('click', function() {
+            const visitDate = document.getElementById('visitDate').value.trim();
+            const keyword = document.getElementById('keyword').value.trim();
+            
+            console.log('Submit clicked:', { visitDate, keyword });
+            
+            if (!visitDate || !keyword) {
+                showMessage('訪問日付と合言葉を両方入力してください', 'error');
+                return;
+            }
+            
+            // 応募済みの場合は新しいスタンプを獲得できない
+            if (hasApplied) {
+                showMessage('応募済みのため、新しいスタンプは獲得できません', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            if (GAS_URL === 'YOUR_GAS_WEB_APP_URL') {
+                // テストモード
+                setTimeout(() => {
+                    testStampAcquisition(visitDate, keyword);
+                }, 1000);
+                return;
+            }
+            
+            // GASに送信
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'addStamp',
+                    userId: userId,
+                    visitDate: visitDate,
+                    keyword: keyword,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    currentStamps = data.stamps;
+                    updateStampDisplay();
+                    showMessage(`スタンプを獲得しました！ (${data.companyName || '店舗名'})`, 'success');
+                    // 入力欄をクリア
+                    document.getElementById('visitDate').value = '';
+                    document.getElementById('keyword').value = '';
+                } else {
+                    showMessage(data.message || 'スタンプの獲得に失敗しました', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('ネットワークエラーが発生しました', 'error');
+            })
+            .finally(() => {
+                showLoading(false);
+            });
         });
-
-        const result = await response.json();
-        document.getElementById("result").textContent = result.message || "処理が完了しました！";
-      } catch (error) {
-        console.error(error);
-        document.getElementById("result").textContent = "エラーが発生しました。";
-      }
-    });
-
-    // 初期化実行
-    initLiff();
-  </script>
+        
+        // テストモード用のスタンプ獲得処理
+        function testStampAcquisition(visitDate, keyword) {
+            // 重複チェック（日付と合言葉の組み合わせ）
+            const stampKey = visitDate + '_' + keyword;
+            const isDuplicate = currentStamps.some(stamp => stamp.stampKey === stampKey);
+            
+            if (isDuplicate) {
+                showMessage('この日付と合言葉の組み合わせは既に使用済みです', 'error');
+                showLoading(false);
+                return;
+            }
+            
+            // スタンプ上限チェック
+            if (currentStamps.length >= 6) {
+                showMessage('スタンプは最大6個までです', 'error');
+                showLoading(false);
+                return;
+            }
+            
+            // 新しいスタンプを追加
+            currentStamps.push({
+                stampKey: stampKey,
+                visitDate: visitDate,
+                keyword: keyword,
+                companyName: 'テスト店舗',
+                timestamp: new Date().toISOString()
+            });
+            
+            updateStampDisplay();
+            showMessage('スタンプを獲得しました！（テストモード）', 'success');
+            
+            // 入力欄をクリア
+            document.getElementById('visitDate').value = '';
+            document.getElementById('keyword').value = '';
+            
+            showLoading(false);
+        }
+        
+        // 賞品応募処理（確実に動作するバージョン）
+        function handleApplyClick() {
+            console.log('=== APPLY BUTTON CLICKED ===');
+            console.log('Current stamps:', currentStamps.length);
+            console.log('Has applied:', hasApplied);
+            
+            if (currentStamps.length < 2) {
+                showMessage('スタンプが足りません（2つ以上必要）', 'error');
+                return;
+            }
+            
+            if (hasApplied) {
+                showMessage('既に応募済みです', 'error');
+                return;
+            }
+            
+            // 応募状態を更新
+            hasApplied = true;
+            updateStampDisplay();
+            
+            if (GOOGLE_FORM_URL === 'YOUR_GOOGLE_FORM_URL') {
+                // テストモード
+                showTestApplicationComplete();
+                return;
+            }
+            
+            // Googleフォームを開く
+            try {
+                if (typeof liff !== 'undefined' && liff.isInClient) {
+                    liff.openWindow({
+                        url: GOOGLE_FORM_URL,
+                        external: true
+                    });
+                    showMessage('外部ブラウザでGoogleフォームを開きました！', 'success');
+                } else {
+                    const opened = window.open(GOOGLE_FORM_URL, '_blank');
+                    if (opened) {
+                        showMessage('新しいタブでGoogleフォームを開きました！', 'success');
+                    } else {
+                        showFormLink();
+                    }
+                }
+                
+                // GASに応募状態を保存（本番環境の場合）
+                if (GAS_URL !== 'YOUR_GAS_WEB_APP_URL') {
+                    saveApplicationStatus();
+                }
+                
+            } catch (error) {
+                console.error('Failed to open Google Form:', error);
+                showFormLink();
+            }
+        }
+        
+        // テスト用応募完了表示
+        function showTestApplicationComplete() {
+            showMessage('🎉 応募完了しました！（テストモード）', 'success');
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.style.cssText = `
+                background: #e8f5e8;
+                border: 3px solid #4CAF50;
+                padding: 20px;
+                border-radius: 15px;
+                margin: 20px 0;
+                text-align: center;
+                animation: bounce 0.5s ease;
+            `;
+            resultDiv.innerHTML = `
+                <h3>🎉 応募完了！</h3>
+                <p><strong>スタンプ数:</strong> ${currentStamps.length}個</p>
+                <p><strong>応募賞品:</strong> 商品券${currentStamps.length >= 3 ? '2' : '1'}枚</p>
+                <p><strong>応募日時:</strong> ${new Date().toLocaleString()}</p>
+                <hr style="margin: 15px 0; border: 1px solid #4CAF50;">
+                <p style="color: #666; font-size: 14px;">
+                    抽選結果をお楽しみに！<br>
+                    （本番ではGoogleフォームが開きます）
+                </p>
+            `;
+            
+            const prizeSection = document.querySelector('.prize-section');
+            prizeSection.appendChild(resultDiv);
+        }
+        
+        // フォームリンクを表示
+        function showFormLink() {
+            const linkDiv = document.createElement('div');
+            linkDiv.style.cssText = `
+                background: #f0f8ff;
+                border: 2px solid #4285f4;
+                padding: 20px;
+                border-radius: 10px;
+                margin: 15px 0;
+                text-align: center;
+            `;
+            linkDiv.innerHTML = `
+                <p style="margin-bottom: 15px;">手動でフォームを開いてください：</p>
+                <a href="${GOOGLE_FORM_URL}" target="_blank" style="
+                    display: inline-block;
+                    background: #4285f4;
+                    color: white;
+                    padding: 15px 25px;
+                    text-decoration: none;
+                    border-radius: 8px;
+                    font-weight: bold;
+                    font-size: 16px;
+                ">📝 Googleフォームで応募する</a>
+            `;
+            
+            document.querySelector('.prize-section').appendChild(linkDiv);
+        }
+        
+        // 使用済みスタンプをGASに保存
+        function saveUsedStamps(stampsUsed, prizeName) {
+            fetch(GAS_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'recordApplication',
+                    userId: userId,
+                    stampsUsed: stampsUsed,
+                    prizeName: prizeName,
+                    timestamp: new Date().toISOString()
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Used stamps saved:', data);
+            })
+            .catch(error => {
+                console.error('Failed to save used stamps:', error);
+            });
+        }
+        
+        // メッセージ表示
+        function showMessage(text, type) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            messageElement.className = `message ${type}`;
+            messageElement.style.display = 'block';
+            
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+        
+        // ローディング表示
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        // 今日の日付をデフォルト設定
+        document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+        
+        console.log('App loaded successfully');
+    </script>
 </body>
 </html>
